@@ -5,7 +5,7 @@ OpenGL Cloth simulation
 
 Based on "Mosegaards Cloth Simulation Coding Tutorial" ( http://cg.alexandra.dk/2009/06/02/mosegaards-cloth-simulation-coding-tutorial/ )
 
-
+The real purpose of this code is to discover and describe how the same code can be implemented using different versions of OpenGL.
 
 ## Installation
 
