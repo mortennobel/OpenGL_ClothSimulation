@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="TextResource.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="cloth_1_5_starting_point\cloth_1_5_starting_point.cpp">
+      <Filter>cloth_1_5_starting_point</Filter>
+    </ClCompile>
+    <ClCompile Include="cloth_1_5_glm\cloth_1_5_glm.cpp">
+      <Filter>cloth_1_5_glm</Filter>
+    </ClCompile>
+    <ClCompile Include="cloth_2_1_shaders\cloth_2_1_shaders.cpp">
+      <Filter>cloth_2_1_shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="cloth_3_2_core_profile\cloth_3_2_core_profile.cpp">
+      <Filter>cloth_3_2_core_profile</Filter>
+    </ClCompile>
+    <ClCompile Include="cloth_3_2_ping_pong\cloth_3_2_ping_pong.cpp">
+      <Filter>cloth_3_2_ping_pong</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TextResource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="cloth_2_1_shaders\lambert.frag">
+      <Filter>cloth_2_1_shaders</Filter>
+    </None>
+    <None Include="cloth_2_1_shaders\lambert.vert">
+      <Filter>cloth_2_1_shaders</Filter>
+    </None>
+    <None Include="cloth_2_1_shaders\unlit.frag">
+      <Filter>cloth_2_1_shaders</Filter>
+    </None>
+    <None Include="cloth_2_1_shaders\unlit.vert">
+      <Filter>cloth_2_1_shaders</Filter>
+    </None>
+    <None Include="cloth_3_2_core_profile\lambert.frag">
+      <Filter>cloth_3_2_core_profile</Filter>
+    </None>
+    <None Include="cloth_3_2_core_profile\lambert.vert">
+      <Filter>cloth_3_2_core_profile</Filter>
+    </None>
+    <None Include="cloth_3_2_core_profile\unlit.frag">
+      <Filter>cloth_3_2_core_profile</Filter>
+    </None>
+    <None Include="cloth_3_2_core_profile\unlit.vert">
+      <Filter>cloth_3_2_core_profile</Filter>
+    </None>
+    <None Include="cloth_3_2_ping_pong\lambert.frag">
+      <Filter>cloth_3_2_ping_pong</Filter>
+    </None>
+    <None Include="cloth_3_2_ping_pong\lambert.vert">
+      <Filter>cloth_3_2_ping_pong</Filter>
+    </None>
+    <None Include="cloth_3_2_ping_pong\unlit.frag">
+      <Filter>cloth_3_2_ping_pong</Filter>
+    </None>
+    <None Include="cloth_3_2_ping_pong\unlit.vert">
+      <Filter>cloth_3_2_ping_pong</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="cloth_1_5_starting_point">
+      <UniqueIdentifier>{cb011504-548a-44cd-bf83-9e48d01c1e73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cloth_1_5_glm">
+      <UniqueIdentifier>{785d0052-ab07-4919-87e7-77f379b14651}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cloth_2_1_shaders">
+      <UniqueIdentifier>{76453aa9-75aa-4e42-a4d7-c141c664e108}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cloth_3_2_core_profile">
+      <UniqueIdentifier>{10a140c9-a230-41f6-ab5e-481107ed7c02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cloth_3_2_ping_pong">
+      <UniqueIdentifier>{4c5186d6-4305-4ffe-b698-ea30a6bcd029}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
