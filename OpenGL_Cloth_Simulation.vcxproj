@@ -11,29 +11,30 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cloth_1_5_glm.cpp" />
-    <ClCompile Include="cloth_1_5_starting_point.cpp" />
-    <ClCompile Include="cloth_2_1_shaders.cpp" />
-    <ClCompile Include="cloth_3_2_core_profile.cpp" />
-    <ClCompile Include="cloth_4_3_compute.cpp" />
+    <ClCompile Include="cloth_1_5_glm\cloth_1_5_glm.cpp" />
+    <ClCompile Include="cloth_1_5_starting_point\cloth_1_5_starting_point.cpp" />
+    <ClCompile Include="cloth_2_1_shaders\cloth_2_1_shaders.cpp" />
+    <ClCompile Include="cloth_3_2_core_profile\cloth_3_2_core_profile.cpp" />
+    <ClCompile Include="cloth_3_2_ping_pong\cloth_3_2_ping_pong.cpp" />
     <ClCompile Include="TextResource.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cloth_4_3_compute.h" />
     <ClInclude Include="TextResource.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cloth_2_1.frag" />
-    <None Include="cloth_2_1.vert" />
-    <None Include="cloth_3_2.frag" />
-    <None Include="cloth_3_2.vert" />
-    <None Include="cloth_unlit_2_1.frag" />
-    <None Include="cloth_unlit_2_1.vert" />
-    <None Include="cloth_unlit_3_2.frag" />
-    <None Include="cloth_unlit_3_2.vert" />
-    <None Include="color.frag" />
-    <None Include="color.vert" />
+    <None Include="cloth_2_1_shaders\lambert.frag" />
+    <None Include="cloth_2_1_shaders\lambert.vert" />
+    <None Include="cloth_2_1_shaders\unlit.frag" />
+    <None Include="cloth_2_1_shaders\unlit.vert" />
+    <None Include="cloth_3_2_core_profile\lambert.frag" />
+    <None Include="cloth_3_2_core_profile\lambert.vert" />
+    <None Include="cloth_3_2_core_profile\unlit.frag" />
+    <None Include="cloth_3_2_core_profile\unlit.vert" />
+    <None Include="cloth_3_2_ping_pong\lambert.frag" />
+    <None Include="cloth_3_2_ping_pong\lambert.vert" />
+    <None Include="cloth_3_2_ping_pong\unlit.frag" />
+    <None Include="cloth_3_2_ping_pong\unlit.vert" />
     <None Include="README.md">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </None>
