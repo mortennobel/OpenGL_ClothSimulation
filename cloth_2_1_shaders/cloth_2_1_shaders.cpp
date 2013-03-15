@@ -13,7 +13,7 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
-#include "TextResource.h"
+#include "../TextResource.h"
 
 namespace{
 /* Some physics constants */
@@ -534,8 +534,8 @@ int main_2_1_shaders( int &argc, char** argv )
 	if (GlewInitResult != GLEW_OK) {
 		printf("ERROR: %s\n", glewGetErrorString(GlewInitResult));
 	}
-	litShader = loadShader("cloth_2_1.vert", "cloth_2_1.frag");
-	unlitShader = loadShader("cloth_unlit_2_1.vert", "cloth_unlit_2_1.frag");
+	litShader = loadShader("cloth_2_1_shaders/lambert.vert", "cloth_2_1_shaders/lambert.frag");
+	unlitShader = loadShader("cloth_2_1_shaders/unlit.vert", "cloth_2_1_shaders/unlit.frag");
 	init();
 
 	glutDisplayFunc(display);  
