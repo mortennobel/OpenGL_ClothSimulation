@@ -38,6 +38,8 @@ vec4 lightPos1;
 /// vec4 (vec3 pos + moveable)
 ///
 
+
+
 GLuint buildCandyColorTexture(vec4 color1, vec4 color2, int width){
 	std::vector<vec4> textureData;
 	for (int i=0;i<width;i++){
@@ -740,12 +742,12 @@ GLuint loadShader(const char* vertexShaderName, const char* fragmentShaderName){
 int main_3_2_ping_pong(int &argc, char** argv)
 {
 	glutInit( &argc, argv );
-	glutInitContextVersion(4, 3);
+	glutInitContextVersion(3, 2);
 	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ); 
 	glutInitWindowSize(1280, 720 ); 
 
-	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 3.2 Core profile" );
+	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 3.2 Ping pong" );
 	glewExperimental = true;
 	GLint GlewInitResult = glewInit();
 	if (GlewInitResult != GLEW_OK) {

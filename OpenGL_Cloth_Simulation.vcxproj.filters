@@ -18,6 +18,9 @@
     <ClCompile Include="cloth_3_2_ping_pong\cloth_3_2_ping_pong.cpp">
       <Filter>cloth_3_2_ping_pong</Filter>
     </ClCompile>
+    <ClCompile Include="cloth_3_2_triangle_strips\cloth_3_2_triangle_strips.cpp">
+      <Filter>cloth_3_2_triangle_strips</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TextResource.h" />
@@ -60,6 +63,18 @@
     <None Include="cloth_3_2_ping_pong\unlit.vert">
       <Filter>cloth_3_2_ping_pong</Filter>
     </None>
+    <None Include="cloth_3_2_triangle_strips\lambert.frag">
+      <Filter>cloth_3_2_triangle_strips</Filter>
+    </None>
+    <None Include="cloth_3_2_triangle_strips\lambert.vert">
+      <Filter>cloth_3_2_triangle_strips</Filter>
+    </None>
+    <None Include="cloth_3_2_triangle_strips\unlit.frag">
+      <Filter>cloth_3_2_triangle_strips</Filter>
+    </None>
+    <None Include="cloth_3_2_triangle_strips\unlit.vert">
+      <Filter>cloth_3_2_triangle_strips</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cloth_1_5_starting_point">
@@ -76,6 +91,9 @@
     </Filter>
     <Filter Include="cloth_3_2_ping_pong">
       <UniqueIdentifier>{4c5186d6-4305-4ffe-b698-ea30a6bcd029}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cloth_3_2_triangle_strips">
+      <UniqueIdentifier>{ef49cfe2-3fdf-4f3c-a4de-929f574af02a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

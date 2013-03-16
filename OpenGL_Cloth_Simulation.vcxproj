@@ -16,6 +16,7 @@
     <ClCompile Include="cloth_2_1_shaders\cloth_2_1_shaders.cpp" />
     <ClCompile Include="cloth_3_2_core_profile\cloth_3_2_core_profile.cpp" />
     <ClCompile Include="cloth_3_2_ping_pong\cloth_3_2_ping_pong.cpp" />
+    <ClCompile Include="cloth_3_2_triangle_strips\cloth_3_2_triangle_strips.cpp" />
     <ClCompile Include="TextResource.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
@@ -35,6 +36,10 @@
     <None Include="cloth_3_2_ping_pong\lambert.vert" />
     <None Include="cloth_3_2_ping_pong\unlit.frag" />
     <None Include="cloth_3_2_ping_pong\unlit.vert" />
+    <None Include="cloth_3_2_triangle_strips\lambert.frag" />
+    <None Include="cloth_3_2_triangle_strips\lambert.vert" />
+    <None Include="cloth_3_2_triangle_strips\unlit.frag" />
+    <None Include="cloth_3_2_triangle_strips\unlit.vert" />
     <None Include="README.md">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </None>

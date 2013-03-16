@@ -30,6 +30,31 @@ mat4 view;
 vec4 lightPos0; // light position in eye space
 vec4 lightPos1;
 
+GLuint buildCandyColorTexture(vec4 color1, vec4 color2, int width){
+	std::vector<vec4> textureData;
+	for (int i=0;i<width;i++){
+		if (i%2==0){
+			textureData.push_back(color1);
+		} else {
+			textureData.push_back(color2);
+		}
+	}
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	GLuint textureName;
+	glGenTextures(1, &textureName);
+	glBindTexture(GL_TEXTURE_2D, textureName);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
+					GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+					GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, 
+				1, 0, GL_RGBA, GL_FLOAT, 
+				value_ptr(textureData[0]));
+	return textureName;
+}
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle
@@ -118,7 +143,7 @@ class Cloth
 private:
 	struct Vertex {
 		vec3 position;
-		vec3 color;
+		vec2 uv;
 		vec3 normal;
 	};
 
@@ -129,7 +154,9 @@ private:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 
-	Particle* getParticle(int x, int y) {return &particles[y*num_particles_width + x];}
+	int getParticleIndex(int x, int y) { return y*num_particles_width + x; }
+
+	Particle* getParticle(int x, int y) {return &particles[getParticleIndex(x,y)];}
 	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
 
 
@@ -162,14 +189,10 @@ private:
 	}
 
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
-	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const vec3 color, std::vector<Vertex> &vertexData)
+	void insertTriangle(Particle *p1, const vec2 uv, std::vector<Vertex> &vertexData)
 	{
-		Vertex v1 = {p1->getPos(), color, p1->getNormal()};
+		Vertex v1 = {p1->getPos(), uv, p1->getNormal()};
 		vertexData.push_back(v1);
-		Vertex v2 = {p2->getPos(), color, p2->getNormal()};
-		vertexData.push_back(v2);
-		Vertex v3 = {p3->getPos(), color, p3->getNormal()};
-		vertexData.push_back(v3);
 	}
 
 public:
@@ -262,9 +285,12 @@ public:
 				getParticle(x,y+1)->addToNormal(normal);
 			}
 		}
+		
 
 		static GLuint vertexArrayObject = 0;
 		static GLuint vertexBuffer = 0;
+		static GLuint texture;
+		static int elementSize;
 		if (vertexArrayObject == 0){
 			glGenVertexArrays(1, &vertexArrayObject);
 			glBindVertexArray(vertexArrayObject);
@@ -273,29 +299,52 @@ public:
 			glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 			
 			GLuint positionAttributeLocation = glGetAttribLocation(litShader, "position");
-			GLuint colorAttributeLocation = glGetAttribLocation(litShader, "color");
+			GLuint uvAttributeLocation = glGetAttribLocation(litShader, "uv");
 			GLuint normalAttributeLocation = glGetAttribLocation(litShader, "normal");
 			glEnableVertexAttribArray(positionAttributeLocation);
-			glEnableVertexAttribArray(colorAttributeLocation);
+			glEnableVertexAttribArray(uvAttributeLocation);
 			glEnableVertexAttribArray(normalAttributeLocation);
 			glVertexAttribPointer(positionAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)0);
-			glVertexAttribPointer(colorAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
-			glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)*2));
+			glVertexAttribPointer(uvAttributeLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
+			glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)+sizeof(vec2)));
+			
+			std::vector<int> indices;
+			
+
+			for (int j = 0; j < num_particles_height-1; j++) {
+				int index;
+				if (j > 0) {
+					indices.push_back(j * num_particles_width); // make degenerate
+				}
+				for (int i = 0; i <= num_particles_width-1; i++) {
+					index = j * num_particles_width + i;
+					indices.push_back(index);
+					indices.push_back(index + num_particles_width);
+				}
+				if (j + 1 < num_particles_height-1) {
+					indices.push_back(index + num_particles_width); // make degenerate
+				}
+			}
+			elementSize = indices.size();
+
+			GLuint elementArrayBuffer;
+			glGenBuffers(1, &elementArrayBuffer);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementSize * sizeof(int), &(indices[0]), GL_STATIC_DRAW);
+			
+			vec4 color1 = vec4(1.0f,1.0f,1.0f, 1.0f);
+			vec4 color2 = vec4(0.6f,0.2f,0.2f, 1.0f);
+			texture = buildCandyColorTexture(color1, color2, num_particles_width-1);
 		}
 		std::vector<Vertex> vertexData;
 
-		for(int x = 0; x<num_particles_width-1; x++)
+		for(int y=0; y<num_particles_height; y++)
 		{
-			for(int y=0; y<num_particles_height-1; y++)
+			for(int x = 0; x<num_particles_width; x++)
 			{
-				vec3 color(0,0,0);
-				if (x%2) // red and white color is interleaved according to which column number
-					color = vec3(0.6f,0.2f,0.2f);
-				else
-					color = vec3(1.0f,1.0f,1.0f);
+				vec2 uv(x/(num_particles_width - 1.0f),y/(num_particles_height-1.0f));
 
-				drawTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),color, vertexData);
-				drawTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),color, vertexData);
+				insertTriangle(getParticle(x, y), uv, vertexData);
 			}
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -305,9 +354,13 @@ public:
 		glUniformMatrix4fv(glGetUniformLocation(litShader, "mvp"),1,false, value_ptr(mvp));
 		mat3 normalMatrix = inverse(transpose(mat3(modelView)));
 		glUniformMatrix3fv(glGetUniformLocation(litShader, "normalMatrix"),1,false, value_ptr(normalMatrix));
-	
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glUniform1i(glGetUniformLocation(litShader, "mainTexture"), 0);
+		
 		glBindVertexArray(vertexArrayObject);
-		glDrawArrays(GL_TRIANGLES, 0, vertexData.size());
+		glDrawElements(GL_TRIANGLE_STRIP, elementSize, GL_UNSIGNED_INT, 0);
 	}
 
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
@@ -428,13 +481,13 @@ void drawSolidSphere(vec3& position){
 	glUseProgram(litShader);
 	static GLuint vertexArrayObject = 0;
 	static int elementCount;
+	static GLuint sphereTex;
 	if (vertexArrayObject == 0){
 		struct Vertex {
 			vec3 position;
-			vec3 color;
+			vec2 uv;
 			vec3 normal;
 		};
-		vec3 color = vec3(0.4f,0.8f,0.5f);
 		std::vector<Vertex> vertexData;
 		int slices = 64;
         int stacks = 32;
@@ -454,7 +507,7 @@ void drawSolidSphere(vec3& position){
                 float cosLong = cos(longitude);
 				vec3 normal = vec3(cosLong * cosLat1, sinLat1, sinLong * cosLat1);
 				vec3 position = normal * radius;
-				Vertex v = {position, color, normal};
+				Vertex v = {position, vec2(j/(float)stacks, i/(float)slices), normal};
 				vertexData.push_back(v);
             }
         }
@@ -484,21 +537,22 @@ void drawSolidSphere(vec3& position){
 		glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), value_ptr(vertexData[0].position), GL_STATIC_DRAW);
 
 		GLuint positionAttributeLocation = glGetAttribLocation(litShader, "position");
-		GLuint colorAttributeLocation = glGetAttribLocation(litShader, "color");
+		GLuint uvAttributeLocation = glGetAttribLocation(litShader, "uv");
 		GLuint normalAttributeLocation = glGetAttribLocation(litShader, "normal");
 		glEnableVertexAttribArray(positionAttributeLocation);
-		glEnableVertexAttribArray(colorAttributeLocation);
+		glEnableVertexAttribArray(uvAttributeLocation);
 		glEnableVertexAttribArray(normalAttributeLocation);
 		glVertexAttribPointer(positionAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)0);
-		glVertexAttribPointer(colorAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
-		glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)*2));
+		glVertexAttribPointer(uvAttributeLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
+		glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)+sizeof(vec2)));
 
 		GLuint elementArrayBuffer;
 		glGenBuffers(1, &elementArrayBuffer);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), &(indices[0]), GL_STATIC_DRAW);
 		elementCount = indices.size();
-
+		vec4 color = vec4(0.4, 0.8, 0.5, 1.0);
+		sphereTex = buildCandyColorTexture(color, color, 1);
 	}
 	
 	mat4 modelView = view;
@@ -508,6 +562,10 @@ void drawSolidSphere(vec3& position){
 	mat3 normalMatrix = inverse(transpose(mat3(modelView)));
 	glUniformMatrix3fv(glGetUniformLocation(litShader, "normalMatrix"),1,false, value_ptr(normalMatrix));
 	
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture(GL_TEXTURE_2D, sphereTex);
+	glUniform1i(glGetUniformLocation(litShader, "mainTexture"),0);
+
 	glBindVertexArray(vertexArrayObject);
 	glDrawElements(GL_TRIANGLE_STRIP, elementCount, GL_UNSIGNED_INT, 0);
 }
@@ -595,6 +653,12 @@ void keyboard( unsigned char key, int x, int y )
 	case 27:    
 		exit ( 0 );
 		break;  
+	case 'w':
+		glPolygonMode(GL_FRONT_AND_BACK , GL_LINE);
+		break;
+	case 'W':
+		glPolygonMode(GL_FRONT_AND_BACK , GL_FILL);
+		break;
 	default: 
 		break;
 	}
@@ -665,7 +729,7 @@ GLuint loadShader(const char* vertexShaderName, const char* fragmentShaderName){
 
 }
 
-int main_3_2_core_profile(int &argc, char** argv)
+int main_3_2_triangle_strips(int &argc, char** argv)
 {
 	glutInit( &argc, argv );
 	glutInitContextVersion(3, 2);
@@ -673,14 +737,14 @@ int main_3_2_core_profile(int &argc, char** argv)
 	glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ); 
 	glutInitWindowSize(1280, 720 ); 
 
-	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 3.2 Core profile" );
+	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 3.2 Triangle strips" );
 	glewExperimental = true;
 	GLint GlewInitResult = glewInit();
 	if (GlewInitResult != GLEW_OK) {
 		printf("ERROR: %s\n", glewGetErrorString(GlewInitResult));
 	}
-	litShader = loadShader("cloth_3_2_core_profile/lambert.vert", "cloth_3_2_core_profile/lambert.frag");
-	unlitShader = loadShader("cloth_3_2_core_profile/unlit.vert", "cloth_3_2_core_profile/unlit.frag");
+	litShader = loadShader("cloth_3_2_triangle_strips/lambert.vert", "cloth_3_2_triangle_strips/lambert.frag");
+	unlitShader = loadShader("cloth_3_2_triangle_strips/unlit.vert", "cloth_3_2_triangle_strips/unlit.frag");
 	init();
 
 	glutDisplayFunc(display);  
