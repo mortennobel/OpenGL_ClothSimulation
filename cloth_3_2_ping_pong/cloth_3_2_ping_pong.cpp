@@ -162,7 +162,9 @@ private:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 
-	Particle* getParticle(int x, int y) {return &particles[y*num_particles_width + x];}
+	int getParticleIndex(int x, int y) { return y*num_particles_width + x; }
+
+	Particle* getParticle(int x, int y) {return &particles[getParticleIndex(x,y)];}
 	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
 
 
@@ -195,14 +197,10 @@ private:
 	}
 
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
-	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const vec2 uv, std::vector<Vertex> &vertexData)
+	void insertTriangle(Particle *p1, const vec2 uv, std::vector<Vertex> &vertexData)
 	{
 		Vertex v1 = {p1->getPos(), uv, p1->getNormal()};
 		vertexData.push_back(v1);
-		Vertex v2 = {p2->getPos(), uv, p2->getNormal()};
-		vertexData.push_back(v2);
-		Vertex v3 = {p3->getPos(), uv, p3->getNormal()};
-		vertexData.push_back(v3);
 	}
 
 public:
@@ -299,6 +297,7 @@ public:
 		static GLuint vertexArrayObject = 0;
 		static GLuint vertexBuffer = 0;
 		static GLuint texture;
+		static int elementSize;
 		if (vertexArrayObject == 0){
 			glGenVertexArrays(1, &vertexArrayObject);
 			glBindVertexArray(vertexArrayObject);
@@ -315,21 +314,41 @@ public:
 			glVertexAttribPointer(positionAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)0);
 			glVertexAttribPointer(uvAttributeLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
 			glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)+sizeof(vec2)));
+			
+			std::vector<int> indices;
+			for(int x = 0; x<num_particles_width-1; x++)
+			{
+				for(int y=0; y<num_particles_height-1; y++)
+				{
+					indices.push_back(getParticleIndex(x+1,y));
+					indices.push_back(getParticleIndex(x,y));
+					indices.push_back(getParticleIndex(x,y+1));
+
+					indices.push_back(getParticleIndex(x+1,y+1));
+					indices.push_back(getParticleIndex(x+1,y));
+					indices.push_back(getParticleIndex(x,y+1));
+				}
+			}
+			elementSize = indices.size();
+
+			GLuint elementArrayBuffer;
+			glGenBuffers(1, &elementArrayBuffer);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementSize * sizeof(int), &(indices[0]), GL_STATIC_DRAW);
+			
 			vec4 color1 = vec4(1.0f,1.0f,1.0f, 1.0f);
 			vec4 color2 = vec4(0.6f,0.2f,0.2f, 1.0f);
-			
 			texture = buildCandyColorTexture(color1, color2, num_particles_width);
 		}
 		std::vector<Vertex> vertexData;
 
-		for(int x = 0; x<num_particles_width-1; x++)
+		for(int y=0; y<num_particles_height; y++)
 		{
-			for(int y=0; y<num_particles_height-1; y++)
+			for(int x = 0; x<num_particles_width; x++)
 			{
-				vec2 uv(x/(float)num_particles_width,y/(float)num_particles_height);
+				vec2 uv(x/(num_particles_width - 1.0f),y/(num_particles_height-1.0f));
 
-				drawTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),uv, vertexData);
-				drawTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),uv, vertexData);
+				insertTriangle(getParticle(x, y), uv, vertexData);
 			}
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -345,7 +364,7 @@ public:
 		glUniform1i(glGetUniformLocation(litShader, "mainTexture"), 0);
 		
 		glBindVertexArray(vertexArrayObject);
-		glDrawArrays(GL_TRIANGLES, 0, vertexData.size());
+		glDrawElements(GL_TRIANGLES, elementSize, GL_UNSIGNED_INT, 0);
 	}
 
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
