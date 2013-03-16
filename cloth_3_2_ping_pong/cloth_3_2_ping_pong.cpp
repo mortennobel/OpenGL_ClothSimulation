@@ -293,6 +293,7 @@ public:
 				getParticle(x,y+1)->addToNormal(normal);
 			}
 		}
+		
 
 		static GLuint vertexArrayObject = 0;
 		static GLuint vertexBuffer = 0;
@@ -316,17 +317,20 @@ public:
 			glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)+sizeof(vec2)));
 			
 			std::vector<int> indices;
-			for(int x = 0; x<num_particles_width-1; x++)
-			{
-				for(int y=0; y<num_particles_height-1; y++)
-				{
-					indices.push_back(getParticleIndex(x+1,y));
-					indices.push_back(getParticleIndex(x,y));
-					indices.push_back(getParticleIndex(x,y+1));
+			
 
-					indices.push_back(getParticleIndex(x+1,y+1));
-					indices.push_back(getParticleIndex(x+1,y));
-					indices.push_back(getParticleIndex(x,y+1));
+			for (int j = 0; j < num_particles_height-1; j++) {
+				int index;
+				if (j > 0) {
+					indices.push_back(j * num_particles_width); // make degenerate
+				}
+				for (int i = 0; i <= num_particles_width-1; i++) {
+					index = j * num_particles_width + i;
+					indices.push_back(index);
+					indices.push_back(index + num_particles_width);
+				}
+				if (j + 1 < num_particles_height-1) {
+					indices.push_back(index + num_particles_width); // make degenerate
 				}
 			}
 			elementSize = indices.size();
@@ -338,7 +342,7 @@ public:
 			
 			vec4 color1 = vec4(1.0f,1.0f,1.0f, 1.0f);
 			vec4 color2 = vec4(0.6f,0.2f,0.2f, 1.0f);
-			texture = buildCandyColorTexture(color1, color2, num_particles_width);
+			texture = buildCandyColorTexture(color1, color2, num_particles_width-1);
 		}
 		std::vector<Vertex> vertexData;
 
@@ -364,7 +368,7 @@ public:
 		glUniform1i(glGetUniformLocation(litShader, "mainTexture"), 0);
 		
 		glBindVertexArray(vertexArrayObject);
-		glDrawElements(GL_TRIANGLES, elementSize, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLE_STRIP, elementSize, GL_UNSIGNED_INT, 0);
 	}
 
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
@@ -657,6 +661,12 @@ void keyboard( unsigned char key, int x, int y )
 	case 27:    
 		exit ( 0 );
 		break;  
+	case 'w':
+		glPolygonMode(GL_FRONT_AND_BACK , GL_LINE);
+		break;
+	case 'W':
+		glPolygonMode(GL_FRONT_AND_BACK , GL_FILL);
+		break;
 	default: 
 		break;
 	}
