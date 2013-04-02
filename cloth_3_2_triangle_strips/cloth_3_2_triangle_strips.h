@@ -13,9 +13,9 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
-#include "../TextResource.h"
+#include "TextResource.h"
 
-namespace{
+namespace cloth_3_2_triangle_strips {
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
@@ -727,9 +727,7 @@ GLuint loadShader(const char* vertexShaderName, const char* fragmentShaderName){
 	return program;
 }
 
-}
-
-int main_3_2_triangle_strips(int &argc, char** argv)
+int main(int &argc, char** argv)
 {
 	glutInit( &argc, argv );
 	glutInitContextVersion(3, 2);
@@ -755,4 +753,6 @@ int main_3_2_triangle_strips(int &argc, char** argv)
 	glutMainLoop();
 
 	return 0;
+}
+
 }

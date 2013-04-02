@@ -1,21 +1,21 @@
 /**
  * Based on "Mosegaards Cloth Simulation Coding Tutorial" ( http://cg.alexandra.dk/2009/06/02/mosegaards-cloth-simulation-coding-tutorial/ )
  */
-#define _USE_MATH_DEFINES
+
+
+
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <GL/gl.h>
 #include <GL/glut.h> 
-
 #include <cmath>
 #include <vector>
 #include <iostream>
 #include "../TextResource.h"
 
-namespace{
+namespace cloth_2_1_shaders{
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
@@ -25,46 +25,6 @@ using namespace glm;
 
 GLuint litShader;
 GLuint unlitShader;
-mat4 projection;
-mat4 view;
-vec4 lightPos0; // light position in eye space
-vec4 lightPos1;
-
-///
-/// Particle textures
-/// Acceleration
-/// rgb = acceleration, w = mass
-/// 
-/// vec4 (vec3 pos + moveable)
-///
-
-
-
-GLuint buildCandyColorTexture(vec4 color1, vec4 color2, int width){
-	std::vector<vec4> textureData;
-	for (int i=0;i<width;i++){
-		if (i%2==0){
-			textureData.push_back(color1);
-		} else {
-			textureData.push_back(color2);
-		}
-	}
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	GLuint textureName;
-	glGenTextures(1, &textureName);
-	glBindTexture(GL_TEXTURE_2D, textureName);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
-					GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
-					GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, 
-				1, 0, GL_RGBA, GL_FLOAT, 
-				value_ptr(textureData[0]));
-	return textureName;
-}
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle
@@ -151,11 +111,6 @@ public:
 class Cloth
 {
 private:
-	struct Vertex {
-		vec3 position;
-		vec2 uv;
-		vec3 normal;
-	};
 
 	int num_particles_width; // number of particles in "width" direction
 	int num_particles_height; // number of particles in "height" direction
@@ -164,9 +119,7 @@ private:
 	std::vector<Particle> particles; // all particles that are part of this cloth
 	std::vector<Constraint> constraints; // alle constraints between particles as part of this cloth
 
-	int getParticleIndex(int x, int y) { return y*num_particles_width + x; }
-
-	Particle* getParticle(int x, int y) {return &particles[getParticleIndex(x,y)];}
+	Particle* getParticle(int x, int y) {return &particles[y*num_particles_width + x];}
 	void makeConstraint(Particle *p1, Particle *p2) {constraints.push_back(Constraint(p1,p2));}
 
 
@@ -199,10 +152,18 @@ private:
 	}
 
 	/* A private method used by drawShaded(), that draws a single triangle p1,p2,p3 with a color*/
-	void insertTriangle(Particle *p1, const vec2 uv, std::vector<Vertex> &vertexData)
+	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const vec3 color)
 	{
-		Vertex v1 = {p1->getPos(), uv, p1->getNormal()};
-		vertexData.push_back(v1);
+		glColor3fv( value_ptr(color) );
+
+		glNormal3fv(value_ptr(normalize(p1->getNormal())));
+		glVertex3fv(value_ptr(p1->getPos() ));
+
+		glNormal3fv(value_ptr(normalize(p2->getNormal()) ));
+		glVertex3fv(value_ptr(p2->getPos() ));
+
+		glNormal3fv(value_ptr(normalize(p3->getNormal()) ));
+		glVertex3fv(value_ptr(p3->getPos() ));
 	}
 
 public:
@@ -295,82 +256,23 @@ public:
 				getParticle(x,y+1)->addToNormal(normal);
 			}
 		}
-		
 
-		static GLuint vertexArrayObject = 0;
-		static GLuint vertexBuffer = 0;
-		static GLuint texture;
-		static int elementSize;
-		if (vertexArrayObject == 0){
-			glGenVertexArrays(1, &vertexArrayObject);
-			glBindVertexArray(vertexArrayObject);
-
-			glGenBuffers(1, &vertexBuffer);
-			glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-			
-			GLuint positionAttributeLocation = glGetAttribLocation(litShader, "position");
-			GLuint uvAttributeLocation = glGetAttribLocation(litShader, "uv");
-			GLuint normalAttributeLocation = glGetAttribLocation(litShader, "normal");
-			glEnableVertexAttribArray(positionAttributeLocation);
-			glEnableVertexAttribArray(uvAttributeLocation);
-			glEnableVertexAttribArray(normalAttributeLocation);
-			glVertexAttribPointer(positionAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)0);
-			glVertexAttribPointer(uvAttributeLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
-			glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)+sizeof(vec2)));
-			
-			std::vector<int> indices;
-			
-
-			for (int j = 0; j < num_particles_height-1; j++) {
-				int index;
-				if (j > 0) {
-					indices.push_back(j * num_particles_width); // make degenerate
-				}
-				for (int i = 0; i <= num_particles_width-1; i++) {
-					index = j * num_particles_width + i;
-					indices.push_back(index);
-					indices.push_back(index + num_particles_width);
-				}
-				if (j + 1 < num_particles_height-1) {
-					indices.push_back(index + num_particles_width); // make degenerate
-				}
-			}
-			elementSize = indices.size();
-
-			GLuint elementArrayBuffer;
-			glGenBuffers(1, &elementArrayBuffer);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementSize * sizeof(int), &(indices[0]), GL_STATIC_DRAW);
-			
-			vec4 color1 = vec4(1.0f,1.0f,1.0f, 1.0f);
-			vec4 color2 = vec4(0.6f,0.2f,0.2f, 1.0f);
-			texture = buildCandyColorTexture(color1, color2, num_particles_width-1);
-		}
-		std::vector<Vertex> vertexData;
-
-		for(int y=0; y<num_particles_height; y++)
+		glBegin(GL_TRIANGLES);
+		for(int x = 0; x<num_particles_width-1; x++)
 		{
-			for(int x = 0; x<num_particles_width; x++)
+			for(int y=0; y<num_particles_height-1; y++)
 			{
-				vec2 uv(x/(num_particles_width - 1.0f),y/(num_particles_height-1.0f));
+				vec3 color(0,0,0);
+				if (x%2) // red and white color is interleaved according to which column number
+					color = vec3(0.6f,0.2f,0.2f);
+				else
+					color = vec3(1.0f,1.0f,1.0f);
 
-				insertTriangle(getParticle(x, y), uv, vertexData);
+				drawTriangle(getParticle(x+1,y),getParticle(x,y),getParticle(x,y+1),color);
+				drawTriangle(getParticle(x+1,y+1),getParticle(x+1,y),getParticle(x,y+1),color);
 			}
 		}
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), value_ptr(vertexData[0].position), GL_STREAM_DRAW);
-		mat4 modelView = view;
-		mat4 mvp = projection * modelView;
-		glUniformMatrix4fv(glGetUniformLocation(litShader, "mvp"),1,false, value_ptr(mvp));
-		mat3 normalMatrix = inverse(transpose(mat3(modelView)));
-		glUniformMatrix3fv(glGetUniformLocation(litShader, "normalMatrix"),1,false, value_ptr(normalMatrix));
-		
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glUniform1i(glGetUniformLocation(litShader, "mainTexture"), 0);
-		
-		glBindVertexArray(vertexArrayObject);
-		glDrawElements(GL_TRIANGLE_STRIP, elementSize, GL_UNSIGNED_INT, 0);
+		glEnd();
 	}
 
 	/* this is an important methods where the time is progressed one time step for the entire cloth.
@@ -459,162 +361,33 @@ float ball_radius = 2; // the radius of our one ball
 /* This is where all the standard Glut/OpenGL stuff is, and where the methods of Cloth are called; 
 addForce(), windForce(), timeStep(), ballCollision(), and drawShaded()*/
 
+
 void init(GLvoid)
 {
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0.2f, 0.2f, 0.4f, 0.5f);				
+	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_COLOR_MATERIAL);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	
-	lightPos0 = vec4(-1.0,1.0,0.5,0.0);
-	vec4 lightAmbient0 = vec4(0.2, 0.2, 0.2, 1.0);
-	vec4 lightDiffuse0 = vec4(0.8, 0.8, 0.8, 1.0);
-	
-	lightPos1 = vec4(1.0,0.0,-0.2,0.0);
+	vec4 lightPos = vec4(-1.0,1.0,0.5,0.0);
+	glLightfv(GL_LIGHT0,GL_POSITION,value_ptr(lightPos));
+
 	vec4 lightAmbient1 = vec4(0.0,0.0,0.0,0.0);
+	vec4 lightPos1 = vec4(1.0,0.0,-0.2,0.0);
 	vec4 lightDiffuse1 = vec4(0.5,0.5,0.3,0.0);
 
-	vec4 ambient[2] = {lightAmbient0, lightAmbient1};
-	vec4 diffuse[2] = {lightDiffuse0, lightDiffuse1};
-	glUseProgram(litShader);
-	glUniform4fv(glGetUniformLocation(litShader, "lightAmbient"),2, value_ptr(ambient[0]));
-	glUniform4fv(glGetUniformLocation(litShader, "lightDiffuse"),2, value_ptr(diffuse[0]));
+	glLightfv(GL_LIGHT1,GL_POSITION,value_ptr(lightPos1));
+	glLightfv(GL_LIGHT1,GL_AMBIENT,value_ptr(lightAmbient1));
+	glLightfv(GL_LIGHT1,GL_DIFFUSE,value_ptr(lightDiffuse1));
 
-	vec4 lightModelAmbient = vec4(0.2, 0.2, 0.2, 1.0);
-	glUniform4fv(glGetUniformLocation(litShader, "lightModelAmbient"),1, value_ptr(lightModelAmbient));
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,GL_TRUE);
 }
 
 
 float ball_time = 0; // counter for used to calculate the z position of the ball below
-
-void drawSolidSphere(vec3& position){
-	glUseProgram(litShader);
-	static GLuint vertexArrayObject = 0;
-	static int elementCount;
-	static GLuint sphereTex;
-	if (vertexArrayObject == 0){
-		struct Vertex {
-			vec3 position;
-			vec2 uv;
-			vec3 normal;
-		};
-		std::vector<Vertex> vertexData;
-		int slices = 64;
-        int stacks = 32;
-        float radius = 1.9;
-        int vertexCount = (stacks+1) * (slices + 1);
-        float piDivStacks = M_PI / stacks;
-        float PIDiv2 = M_PI / 2;
-        float PI2 = M_PI * 2;
-        
-		for (int j = 0; j <= stacks; j++) {
-			float latitude1 = piDivStacks * j - PIDiv2;
-            float sinLat1 = sin(latitude1);
-            float cosLat1 = cos(latitude1);
-            for (int i = 0; i <= slices; i++) {
-                float longitude = (PI2 / slices) * i;
-                float sinLong = sin(longitude);
-                float cosLong = cos(longitude);
-				vec3 normal = vec3(cosLong * cosLat1, sinLat1, sinLong * cosLat1);
-				vec3 position = normal * radius;
-				Vertex v = {position, vec2(j/(float)stacks, i/(float)slices), normal};
-				vertexData.push_back(v);
-            }
-        }
-		std::vector<GLuint> indices;
-        // create indices
-        for (int j = 0; j < stacks; j++) {
-			int index;
-            if (j > 0) {
-                indices.push_back(j * (slices + 1)); // make degenerate
-            }
-            for (int i = 0; i <= slices; i++) {
-                index = j * (slices + 1) + i;
-                indices.push_back(index);
-                indices.push_back(index + slices + 1);
-            }
-            if (j + 1 < stacks) {
-                indices.push_back(index + slices + 1); // make degenerate
-            }
-        }
-		
-		glGenVertexArrays(1, &vertexArrayObject);
-		glBindVertexArray(vertexArrayObject);
-
-		GLuint vertexBuffer;
-		glGenBuffers(1, &vertexBuffer);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), value_ptr(vertexData[0].position), GL_STATIC_DRAW);
-
-		GLuint positionAttributeLocation = glGetAttribLocation(litShader, "position");
-		GLuint uvAttributeLocation = glGetAttribLocation(litShader, "uv");
-		GLuint normalAttributeLocation = glGetAttribLocation(litShader, "normal");
-		glEnableVertexAttribArray(positionAttributeLocation);
-		glEnableVertexAttribArray(uvAttributeLocation);
-		glEnableVertexAttribArray(normalAttributeLocation);
-		glVertexAttribPointer(positionAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)0);
-		glVertexAttribPointer(uvAttributeLocation, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
-		glVertexAttribPointer(normalAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)(sizeof(vec3)+sizeof(vec2)));
-
-		GLuint elementArrayBuffer;
-		glGenBuffers(1, &elementArrayBuffer);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int), &(indices[0]), GL_STATIC_DRAW);
-		elementCount = indices.size();
-		vec4 color = vec4(0.4, 0.8, 0.5, 1.0);
-		sphereTex = buildCandyColorTexture(color, color, 1);
-	}
-	
-	mat4 modelView = view;
-	modelView = translate(modelView, position);
-	mat4 mvp = projection * modelView;
-	glUniformMatrix4fv(glGetUniformLocation(litShader, "mvp"),1,false, value_ptr(mvp));
-	mat3 normalMatrix = inverse(transpose(mat3(modelView)));
-	glUniformMatrix3fv(glGetUniformLocation(litShader, "normalMatrix"),1,false, value_ptr(normalMatrix));
-	
-	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture(GL_TEXTURE_2D, sphereTex);
-	glUniform1i(glGetUniformLocation(litShader, "mainTexture"),0);
-
-	glBindVertexArray(vertexArrayObject);
-	glDrawElements(GL_TRIANGLE_STRIP, elementCount, GL_UNSIGNED_INT, 0);
-}
-
-void drawScreenQuad() {
-	glUseProgram(unlitShader);
-	static GLuint vertexArrayObject = 0;
-	if (vertexArrayObject == 0){
-		struct Vertex {
-			vec3 position;
-			vec3 color;
-		};
-		Vertex vertexData[4] = {
-			{vec3(-200.0f,-100.0f,-100.0f ), vec3( 0.8f,0.8f,1.0f )},
-			{vec3( 200.0f,-100.0f,-100.0f ), vec3( 0.8f,0.8f,1.0f )}, 
-			{vec3(-200.0f, 100.0f,-100.0f ), vec3( 0.4f,0.4f,0.8f )},
-			{vec3( 200.0f, 100.0f,-100.0f ), vec3( 0.4f,0.4f,0.8f )}, 
-			
-		};
-
-		glGenVertexArrays(1, &vertexArrayObject);
-		glBindVertexArray(vertexArrayObject);
-
-		GLuint vertexBuffer;
-		glGenBuffers(1, &vertexBuffer);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(Vertex), value_ptr(vertexData[0].position), GL_STATIC_DRAW);
-
-		GLuint positionAttributeLocation = glGetAttribLocation(unlitShader, "position");
-		GLuint colorAttributeLocation = glGetAttribLocation(unlitShader, "color");
-		glEnableVertexAttribArray(positionAttributeLocation);
-		glEnableVertexAttribArray(colorAttributeLocation);
-		glVertexAttribPointer(positionAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)0);
-		glVertexAttribPointer(colorAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid *)sizeof(vec3));
-	}
-	glUniformMatrix4fv(glGetUniformLocation(unlitShader, "mvp"),1,false, value_ptr(projection));
-	glBindVertexArray(vertexArrayObject);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-}
 
 /* display method called each frame*/
 void display(void)
@@ -629,21 +402,34 @@ void display(void)
 	cloth1.timeStep(); // calculate the particle positions of the next frame
 	cloth1.ballCollision(ball_pos,ball_radius); // resolve collision with the ball
 
+
+
 	// drawing
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	drawScreenQuad(); // drawing some smooth shaded background - because I like it ;)
-	view = mat4(1.0f);
-	view = translate(view, vec3(-6.5, 6, -9.0f));
-	view = rotate(view, 25.0f, vec3(0,1,0));
+	glLoadIdentity();
 
-	// setup light 
+	glUseProgram(unlitShader);// drawing some smooth shaded background - because I like it ;)
+	glBegin(GL_POLYGON);
+	glColor3f(0.8f,0.8f,1.0f);
+	glVertex3f(-200.0f,-100.0f,-100.0f);
+	glVertex3f(200.0f,-100.0f,-100.0f);
+	glColor3f(0.4f,0.4f,0.8f);	
+	glVertex3f(200.0f,100.0f,-100.0f);
+	glVertex3f(-200.0f,100.0f,-100.0f);
+	glEnd();
 	glUseProgram(litShader);
-	vec4 eyeSpaceLight[2] = { lightPos0, lightPos1};
-	glUniform4fv(glGetUniformLocation(litShader, "lightPosition"), 2, value_ptr(eyeSpaceLight[0]));
-	cloth1.drawShaded();
 
-	drawSolidSphere(ball_pos);
+	glTranslatef(-6.5,6,-9.0f); // move camera out and center on the cloth
+	glRotatef(25,0,1,0); // rotate a bit to see the cloth from the side
+	cloth1.drawShaded(); // finally draw the cloth with smooth shading
 	
+	glPushMatrix(); // to draw the ball we use glutSolidSphere, and need to draw the sphere at the position of the ball
+	glTranslatef(ball_pos[0],ball_pos[1],ball_pos[2]); // hence the translation of the sphere onto the ball position
+	glColor3f(0.4f,0.8f,0.5f);
+	glutSolidSphere(ball_radius-0.1,50,50); // draw the ball, but with a slightly lower radius, otherwise we could get ugly visual artifacts of cloth penetrating the ball slightly
+	glPopMatrix();
+
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
@@ -651,10 +437,14 @@ void display(void)
 void reshape(int w, int h)  
 {
 	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION); 
+	glLoadIdentity();  
 	if (h==0)  
-		projection = perspective(80.0f,(float)w,1.0f,5000.0f);
+		gluPerspective(80,(float)w,1.0,5000.0);
 	else
-		projection = perspective(80.0f,( float )w /( float )h, 1.0f, 5000.0f); 
+		gluPerspective (80,( float )w /( float )h,1.0,5000.0 );
+	glMatrixMode(GL_MODELVIEW);  
+	glLoadIdentity(); 
 }
 
 void keyboard( unsigned char key, int x, int y ) 
@@ -663,12 +453,6 @@ void keyboard( unsigned char key, int x, int y )
 	case 27:    
 		exit ( 0 );
 		break;  
-	case 'w':
-		glPolygonMode(GL_FRONT_AND_BACK , GL_LINE);
-		break;
-	case 'W':
-		glPolygonMode(GL_FRONT_AND_BACK , GL_FILL);
-		break;
 	default: 
 		break;
 	}
@@ -737,24 +521,20 @@ GLuint loadShader(const char* vertexShaderName, const char* fragmentShaderName){
 	return program;
 }
 
-}
-
-int main_3_2_ping_pong(int &argc, char** argv)
+int main( int &argc, char** argv ) 
 {
 	glutInit( &argc, argv );
-	glutInitContextVersion(3, 2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
+
 	glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ); 
 	glutInitWindowSize(1280, 720 ); 
 
-	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 3.2 Ping pong" );
-	glewExperimental = true;
+	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 2.1 Shader" );
 	GLint GlewInitResult = glewInit();
 	if (GlewInitResult != GLEW_OK) {
 		printf("ERROR: %s\n", glewGetErrorString(GlewInitResult));
 	}
-	litShader = loadShader("cloth_3_2_ping_pong/lambert.vert", "cloth_3_2_ping_pong/lambert.frag");
-	unlitShader = loadShader("cloth_3_2_ping_pong/unlit.vert", "cloth_3_2_ping_pong/unlit.frag");
+	litShader = loadShader("cloth_2_1_shaders/lambert.vert", "cloth_2_1_shaders/lambert.frag");
+	unlitShader = loadShader("cloth_2_1_shaders/unlit.vert", "cloth_2_1_shaders/unlit.frag");
 	init();
 
 	glutDisplayFunc(display);  
@@ -765,4 +545,6 @@ int main_3_2_ping_pong(int &argc, char** argv)
 	glutMainLoop();
 
 	return 0;
+}
+
 }

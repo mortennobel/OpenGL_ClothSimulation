@@ -41,7 +41,7 @@ History:
 #include <vector>
 #include <iostream>
 
-
+namespace cloth_1_5_starting_point {
 /* Some physics constants */
 #define DAMPING 0.01 // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5*0.5 // how large time step each particle takes each frame
@@ -568,7 +568,7 @@ void arrow_keys( int a_keys, int x, int y )
 	}
 }
 
-int main_1_5_starting_point ( int argc, char** argv ) 
+int main( int& argc, char** argv ) 
 {
 	glutInit( &argc, argv );
 
@@ -586,3 +586,4 @@ int main_1_5_starting_point ( int argc, char** argv )
 	glutMainLoop();
 	return 0;
 }
+};

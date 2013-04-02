@@ -1,13 +1,14 @@
+#define _USE_MATH_DEFINES
 #include <iostream>
-
+#include <GL/glew.h>
+#include "cloth_1_5_glm\cloth_1_5_glm.h"
+#include "cloth_1_5_starting_point\cloth_1_5_starting_point.h"
+#include "cloth_2_1_shaders\cloth_2_1_shaders.h"
+#include "cloth_3_2_core_profile\cloth_3_2_core_profile.h"
+#include "cloth_3_2_triangle_strips\cloth_3_2_triangle_strips.h"
+#include "cloth_3_2_ping_pong\cloth_3_2_ping_pong.h"
 using namespace std;
 
-int main_1_5_starting_point ( int argc, char** argv );
-int main_1_5_glm(int &argc, char** argv);
-int main_2_1_shaders(int &argc, char** argv);
-int main_3_2_core_profile(int &argc, char** argv);
-int main_3_2_triangle_strips(int &argc, char** argv);
-int main_3_2_ping_pong(int &argc, char** argv);
 
 int main(int argc, char* argv[]) {
 	cout << "Cloth simulation:" << endl;
@@ -21,22 +22,22 @@ int main(int argc, char* argv[]) {
 	cin >> menuChoice;
 	switch (menuChoice) {
 	case 0:
-		main_1_5_starting_point(argc, argv);
+		cloth_1_5_starting_point::main(argc, argv);
 		break;
 	case 1:
-		main_1_5_glm(argc, argv);
+		cloth_1_5_glm::main(argc, argv);
 		break;
 	case 2:
-		main_2_1_shaders(argc, argv);
+		cloth_2_1_shaders::main(argc, argv);
 		break;
 	case 3:
-		main_3_2_core_profile(argc, argv);
+		cloth_3_2_core_profile::main(argc, argv);
 		break;
 	case 4:
-		main_3_2_triangle_strips(argc, argv);
+		cloth_3_2_triangle_strips::main(argc, argv);
 		break;
 	case 5:
-		main_3_2_ping_pong(argc, argv);
+		cloth_3_2_ping_pong::main(argc, argv);
 		break;
 	default:
 		cout << "Invalid option" << endl;

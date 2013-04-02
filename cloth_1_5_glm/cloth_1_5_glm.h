@@ -13,8 +13,7 @@
 #include <vector>
 #include <iostream>
 
-
-namespace{
+namespace cloth_1_5_glm {
 /* Some physics constants */
 #define DAMPING 0.01f // how much to damp the cloth simulation each frame
 #define TIME_STEPSIZE2 0.5f*0.5f // how large time step each particle takes each frame
@@ -472,8 +471,7 @@ void arrow_keys( int a_keys, int x, int y )
 	}
 }
 
-}
-int main_1_5_glm( int &argc, char** argv ) 
+int main( int &argc, char** argv ) 
 {
 	glutInit( &argc, argv );
 
@@ -491,4 +489,6 @@ int main_1_5_glm( int &argc, char** argv )
 	glutMainLoop();
 
 	return 0;
+}
+
 }
