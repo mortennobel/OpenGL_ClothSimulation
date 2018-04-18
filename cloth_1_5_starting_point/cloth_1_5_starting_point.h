@@ -35,8 +35,7 @@ History:
 #ifdef _WIN32
 #include <windows.h> 
 #endif
-#include <GL/gl.h>
-#include <GL/glut.h> 
+#include <glm/gtc/type_ptr.hpp>
 #include <math.h>
 #include <vector>
 #include <iostream>
@@ -245,15 +244,17 @@ private:
 	void drawTriangle(Particle *p1, Particle *p2, Particle *p3, const Vec3 color)
 	{
 		glColor3fv( (GLfloat*) &color );
+		Vec3 norm = p1->getNormal().normalized();
+		glNormal3fv((GLfloat *) norm.f);
+		glVertex3fv((GLfloat *) p1->getPos().f);
 
-		glNormal3fv((GLfloat *) &(p1->getNormal().normalized() ));
-		glVertex3fv((GLfloat *) &(p1->getPos() ));
+		norm = (p2->getNormal().normalized() );
+		glNormal3fv((GLfloat *) norm.f);
+		glVertex3fv((GLfloat *) p2->getPos().f);
 
-		glNormal3fv((GLfloat *) &(p2->getNormal().normalized() ));
-		glVertex3fv((GLfloat *) &(p2->getPos() ));
-
-		glNormal3fv((GLfloat *) &(p3->getNormal().normalized() ));
-		glVertex3fv((GLfloat *) &(p3->getPos() ));
+		norm = (p3->getNormal().normalized() );
+		glNormal3fv((GLfloat *) norm.f);
+		glVertex3fv((GLfloat *) p3->getPos().f);
 	}
 
 public:

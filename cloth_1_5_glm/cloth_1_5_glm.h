@@ -3,12 +3,11 @@
  */
 
 #ifdef _WIN32
-#include <windows.h> 
+#include <windows.h>
 #endif
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <GL/gl.h>
-#include <GL/glut.h> 
+
 #include <math.h>
 #include <vector>
 #include <iostream>

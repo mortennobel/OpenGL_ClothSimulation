@@ -2,18 +2,15 @@
  * Based on "Mosegaards Cloth Simulation Coding Tutorial" ( http://cg.alexandra.dk/2009/06/02/mosegaards-cloth-simulation-coding-tutorial/ )
  */
 #define _USE_MATH_DEFINES
-#include <GL/glew.h>
-#include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <GL/gl.h>
-#include <GL/glut.h> 
 
 #include <cmath>
 #include <vector>
 #include <iostream>
 #include "TextResource.h"
+#include <SDL2/SDL.h>
 
 namespace cloth_3_2_core_profile {
 /* Some physics constants */
@@ -29,7 +26,10 @@ mat4 projection;
 mat4 view;
 vec4 lightPos0; // light position in eye space
 vec4 lightPos1;
-
+int w;
+int h;
+SDL_Window *mainwindow; /* Our window handle */
+void reshape(int w, int h);
 
 /* The particle class represents a particle of mass that can move around in 3D space*/
 class Particle
@@ -300,7 +300,7 @@ public:
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 		glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), value_ptr(vertexData[0].position), GL_STREAM_DRAW);
-		mat4 modelView = view;
+		mat4 modelView = view; // no model matrix - everything in woldspace
 		mat4 mvp = projection * modelView;
 		glUniformMatrix4fv(glGetUniformLocation(litShader, "mvp"),1,false, value_ptr(mvp));
 		mat3 normalMatrix = inverse(transpose(mat3(modelView)));
@@ -396,8 +396,10 @@ float ball_radius = 2; // the radius of our one ball
 /* This is where all the standard Glut/OpenGL stuff is, and where the methods of Cloth are called; 
 addForce(), windForce(), timeStep(), ballCollision(), and drawShaded()*/
 
-void init(GLvoid)
+void init()
 {
+    reshape(w,h);
+    glViewport(0,0,w,h);
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0.2f, 0.2f, 0.4f, 0.5f);				
 	glEnable(GL_DEPTH_TEST);
@@ -525,7 +527,6 @@ void drawScreenQuad() {
 			{vec3( 200.0f,-100.0f,-100.0f ), vec3( 0.8f,0.8f,1.0f )}, 
 			{vec3(-200.0f, 100.0f,-100.0f ), vec3( 0.4f,0.4f,0.8f )},
 			{vec3( 200.0f, 100.0f,-100.0f ), vec3( 0.4f,0.4f,0.8f )}, 
-			
 		};
 
 		glGenVertexArrays(1, &vertexArrayObject);
@@ -552,8 +553,7 @@ void drawScreenQuad() {
 void display(void)
 {
 	// calculating positions
-
-	ball_time++;
+    ball_time++;
 	ball_pos[2] = (float)cos(ball_time/50.0f)*7;
 
 	cloth1.addForce(vec3(0,-0.2,0)*TIME_STEPSIZE2); // add gravity each frame, pointing down
@@ -563,10 +563,11 @@ void display(void)
 
 	// drawing
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    view = mat4(1.0f);
 	drawScreenQuad(); // drawing some smooth shaded background - because I like it ;)
-	view = mat4(1.0f);
-	view = translate(view, vec3(-6.5, 6, -9.0f));
-	view = rotate(view, 25.0f, vec3(0,1,0));
+
+    view = translate(view, vec3(-6.5, 6, -9.0f));
+    view = rotate(view, glm::radians(25.0f), vec3(0,1,0));
 
 	// setup light 
 	glUseProgram(litShader);
@@ -575,18 +576,17 @@ void display(void)
 	cloth1.drawShaded();
 
 	drawSolidSphere(ball_pos);
-	
-	glutSwapBuffers();
-	glutPostRedisplay();
+
+    SDL_GL_SwapWindow(mainwindow);
+    SDL_Delay(16);
 }
 
 void reshape(int w, int h)  
 {
-	glViewport(0, 0, w, h);
-	if (h==0)  
-		projection = perspective(80.0f,(float)w,1.0f,5000.0f);
+	if (h==0)
+		projection = perspective(glm::radians(80.0f),(float)w,1.0f,5000.0f);
 	else
-		projection = perspective(80.0f,( float )w /( float )h, 1.0f, 5000.0f); 
+		projection = perspective(glm::radians(80.0f),( float )w /( float )h, 1.0f, 5000.0f);
 }
 
 void keyboard( unsigned char key, int x, int y ) 
@@ -663,30 +663,69 @@ GLuint loadShader(const char* vertexShaderName, const char* fragmentShaderName){
 	return program;
 }
 
+void renderloop(){
+
+    /*glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
+    glutKeyboardFunc(keyboard);
+    glutSpecialFunc(arrow_keys);
+
+    glutMainLoop();
+     */
+    while (true){
+        SDL_GetWindowSize(mainwindow,&w,&h);
+        reshape(w,h);
+        display();
+
+    }
+}
+
 int main(int &argc, char** argv)
 {
-	glutInit( &argc, argv );
-	glutInitContextVersion(3, 2);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
-	glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH ); 
-	glutInitWindowSize(1280, 720 ); 
+    SDL_GLContext maincontext; /* Our opengl context handle */
 
-	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 3.2 Core profile" );
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
+        std::cout<<("Unable to initialize SDL"); /* Or die on error */
+
+    /* Request opengl 3.2 context.
+     * SDL doesn't have the ability to choose which profile at this time of writing,
+     * but it should default to the core profile */
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    w = 1280;
+    h = 720;
+    /* Create our window centered at 512x512 resolution */
+    mainwindow = SDL_CreateWindow("Cloth Tutorial Refactoring OpenGL 3.2 Core profile" , SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                                  w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+    if (!mainwindow) /* Die if creation failed */
+        std::cout<<("Unable to create window");
+
+
+    /* Create our opengl context and attach it to our window */
+    maincontext = SDL_GL_CreateContext(mainwindow);
+    SDL_GL_SetSwapInterval(1);
+
+
+#ifdef _WIN32
 	glewExperimental = true;
 	GLint GlewInitResult = glewInit();
 	if (GlewInitResult != GLEW_OK) {
 		printf("ERROR: %s\n", glewGetErrorString(GlewInitResult));
 	}
+#endif
 	litShader = loadShader("cloth_3_2_core_profile/lambert.vert", "cloth_3_2_core_profile/lambert.frag");
 	unlitShader = loadShader("cloth_3_2_core_profile/unlit.vert", "cloth_3_2_core_profile/unlit.frag");
+
 	init();
 
-	glutDisplayFunc(display);  
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(arrow_keys);
+    renderloop();
 
-	glutMainLoop();
+    SDL_GL_DeleteContext(maincontext);
+    SDL_DestroyWindow(mainwindow);
+    SDL_Quit();
 
 	return 0;
 }

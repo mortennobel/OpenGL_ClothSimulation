@@ -4,12 +4,9 @@
 
 
 
-#include <GL/glew.h>
-#include <GL/freeglut.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <GL/gl.h>
-#include <GL/glut.h> 
+
 #include <cmath>
 #include <vector>
 #include <iostream>
@@ -405,7 +402,7 @@ void display(void)
 
 
 	// drawing
-
+    glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
@@ -529,10 +526,12 @@ int main( int &argc, char** argv )
 	glutInitWindowSize(1280, 720 ); 
 
 	glutCreateWindow( "Cloth Tutorial Refactoring OpenGL 2.1 Shader" );
+#if _WIN32
 	GLint GlewInitResult = glewInit();
 	if (GlewInitResult != GLEW_OK) {
 		printf("ERROR: %s\n", glewGetErrorString(GlewInitResult));
 	}
+#endif
 	litShader = loadShader("cloth_2_1_shaders/lambert.vert", "cloth_2_1_shaders/lambert.frag");
 	unlitShader = loadShader("cloth_2_1_shaders/unlit.vert", "cloth_2_1_shaders/unlit.frag");
 	init();
@@ -543,8 +542,6 @@ int main( int &argc, char** argv )
 	glutSpecialFunc(arrow_keys);
 
 	glutMainLoop();
-
 	return 0;
 }
-
 }

@@ -1,12 +1,17 @@
 #define _USE_MATH_DEFINES
 #include <iostream>
-#include <GL/glew.h>
-#include "cloth_1_5_glm\cloth_1_5_glm.h"
-#include "cloth_1_5_starting_point\cloth_1_5_starting_point.h"
-#include "cloth_2_1_shaders\cloth_2_1_shaders.h"
-#include "cloth_3_2_core_profile\cloth_3_2_core_profile.h"
-#include "cloth_3_2_triangle_strips\cloth_3_2_triangle_strips.h"
-#include "cloth_3_2_ping_pong\cloth_3_2_ping_pong.h"
+#ifdef __WIN32
+#   include <GL/glew.h>
+#   include <GL/gl.h>
+#else
+#   include <OpenGL/gl3.h>
+#   include <glut.h>
+#endif
+#include "cloth_1_5_glm/cloth_1_5_glm.h"
+#include "cloth_1_5_starting_point/cloth_1_5_starting_point.h"
+#include "cloth_2_1_shaders/cloth_2_1_shaders.h"
+#include "cloth_3_2_core_profile/cloth_3_2_core_profile.h"
+#include "cloth_3_2_triangle_strips/cloth_3_2_triangle_strips.h"
 using namespace std;
 
 
@@ -17,7 +22,6 @@ int main(int argc, char* argv[]) {
 	cout << "2. OpenGL 2.1 (Shaders)" << endl;
 	cout << "3. OpenGL 3.2 (Core profile)" << endl;
 	cout << "4. OpenGL 3.2 (Triangle strips)" << endl;
-	cout << "5. OpenGL 3.2 (Ping pong textures)" << endl;
 	int menuChoice;
 	cin >> menuChoice;
 	switch (menuChoice) {
@@ -35,9 +39,6 @@ int main(int argc, char* argv[]) {
 		break;
 	case 4:
 		cloth_3_2_triangle_strips::main(argc, argv);
-		break;
-	case 5:
-		cloth_3_2_ping_pong::main(argc, argv);
 		break;
 	default:
 		cout << "Invalid option" << endl;
